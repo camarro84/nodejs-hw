@@ -1,11 +1,19 @@
-const express = require('express')
-const cors = require('cors')
-const pinoHttp = require('pino-http')()
-require('dotenv').config()
+import express from 'express'
+import cors from 'cors'
+import pinoHttp from 'pino-http'
+import 'dotenv/config'
 
 const app = express()
 
-app.use(pinoHttp)
+app.use(
+  pinoHttp({
+    transport: {
+      target: 'pino-pretty',
+      options: { colorize: true, singleLine: true }
+    }
+  })
+)
+
 app.use(cors())
 app.use(express.json())
 
