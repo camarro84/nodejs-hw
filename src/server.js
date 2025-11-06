@@ -1,29 +1,30 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import pinoHttp from 'pino-http'
-import 'dotenv/config'
 
+import logger from './middleware/logger.js'
+import notFoundHandler from './middleware/notFoundHandler.js'
+import errorHandler from './middleware/errorHandler.js'
+import notesRouter from './routes/notesRoutes.js'
+import { connectMongoDB } from './db/connectMongoDB.js'
+
+const { PORT = 3000, MONGO_URL } = process.env
 const app = express()
 
-app.use(
-  pinoHttp({
-    transport: { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
-  })
-)
+app.use(logger)
 app.use(cors())
 app.use(express.json())
 
-app.get('/notes', (req, res) => res.status(200).json({ message: 'Retrieved all notes' }))
-app.get('/notes/:noteId', (req, res) =>
-  res.status(200).json({ message: `Retrieved note with ID: ${req.params.noteId}` })
-)
-app.get('/test-error', () => { throw new Error('Simulated server error') })
+app.use('/', notesRouter)
 
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }))
-app.use((err, req, res, next) => {
-  if (req.log?.error) req.log.error(err)
-  res.status(500).json({ message: err.message })
-})
+app.use(notFoundHandler)
+app.use(errorHandler)
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`))
+connectMongoDB(MONGO_URL)
+  .then(() => {
+    app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+  })
+  .catch((err) => {
+    console.error('MongoDB connection failed:', err)
+    process.exit(1)
+  })
