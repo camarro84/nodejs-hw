@@ -1,4 +1,3 @@
-// src/utils/sendMail.js
 import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({
@@ -11,13 +10,8 @@ const transporter = nodemailer.createTransport({
   }
 })
 
-export const sendEmail = async ({ to, subject, html }) => {
-  const from = process.env.SMTP_FROM
-
-  await transporter.sendMail({
-    from,
-    to,
-    subject,
-    html
-  })
+export const sendEmail = async (options) => {
+  const from = options.from || process.env.SMTP_FROM
+  const finalOptions = { ...options, from }
+  return transporter.sendMail(finalOptions)
 }
